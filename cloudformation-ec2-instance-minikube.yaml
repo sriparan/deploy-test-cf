@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "EC2 template with minikube? We are using AMZ2, This is on ubuntu ami-04505e74c0741db8d"
+Parameters:
+  myamiid:
+    Type: String
+    Default: ami-0c293f3f676ec4f90
+  myinstancetype:
+    Type: String
+    Default: c5.xlarge
+  mysshkeys:
+    Type: String
+Resources:
+  ec2instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref myamiid
+      InstanceInitiatedShutdownBehavior: terminate
+      InstanceType: !Ref myinstancetype
+      KeyName: !Ref mysshkeys
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+            - "sg-09111ab72afe5d7f3"
+          SubnetId: "subnet-053038fe2bcf6bd98"
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash -xe
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+            yum update -y
+            yum install -y docker
+            echo "This was running" > /tmp/junk.txt
+            systemctl enable docker
+            usermod -a -G docker ec2-user
+Outputs:
+  PublicName:
+    Description: EC2 ip name
+    Value: !GetAtt ec2instance.PublicDnsName
+  PublicIp:
+    Description: EC2 ip
+    Value: !GetAtt ec2instance.PublicIp
